@@ -10,10 +10,20 @@ Cloud sessions load plugins only if something installs them at session start.
 This adds that something: a `SessionStart` hook that runs
 `claude plugin marketplace add` and `claude plugin install`.
 
-The hook is **fetched, never transcribed**. Its canonical copy is
-`https://raw.githubusercontent.com/StevenEvo/happy-skill-library/main/.claude/hooks/session-start.sh`,
-and the whole point of pulling it is that a repo set up in January still gets
-today's version. A copy pasted from memory is a fork that nobody knows exists.
+The hook is **fetched, never transcribed**: a repo set up in January should still
+get today's version, and a copy written from memory is a fork nobody knows
+exists.
+
+Fetch it by cloning the library, not over HTTP:
+
+```sh
+git clone --depth 1 https://github.com/StevenEvo/happy-skill-library.git /tmp/hp-src
+```
+
+`raw.githubusercontent.com` returns 404 for every path in a cloud session, the
+repo's own README included, so `curl` of a raw URL fails in a way that reads as
+a missing file rather than a blocked host. Cloning a public repo needs no
+credentials and works.
 
 ## 1. Look before writing
 
@@ -40,9 +50,18 @@ branch, which looks exactly like the hook not working.
 
 ## 3. Write
 
-**The hook.** Fetch the canonical file to `.claude/hooks/session-start.sh` and
-`chmod +x` it. Git tracks the executable bit, so this survives the push; without
-it the hook fails in a way that reads as "the hook never ran".
+**The hook.** Copy it out of the clone and make it executable, then drop the
+clone:
+
+```sh
+mkdir -p .claude/hooks
+cp /tmp/hp-src/.claude/hooks/session-start.sh .claude/hooks/session-start.sh
+chmod +x .claude/hooks/session-start.sh
+rm -rf /tmp/hp-src
+```
+
+Git tracks the executable bit, so `chmod` survives the push; without it the hook
+fails in a way that reads as "the hook never ran".
 
 **The settings.** `.claude/settings.json` needs:
 
