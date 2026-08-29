@@ -20,10 +20,12 @@ Fetch it by cloning the library, not over HTTP:
 git clone --depth 1 https://github.com/StevenEvo/happy-skill-library.git /tmp/hp-src
 ```
 
-`raw.githubusercontent.com` returns 404 for every path in a cloud session, the
-repo's own README included, so `curl` of a raw URL fails in a way that reads as
-a missing file rather than a blocked host. Cloning a public repo needs no
-credentials and works.
+Cloning works unauthenticated against a public repo, and picks up a cloud
+session's injected credentials when the repo is attached to the session. A
+`raw.githubusercontent.com` URL does neither, and GitHub answers an
+unauthenticated request for a private path with 404 rather than 403 — so the
+failure reads as a missing file and sends you hunting for a typo in a path that
+is correct.
 
 ## 1. Look before writing
 
