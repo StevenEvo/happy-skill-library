@@ -23,32 +23,39 @@ In a repo you use with `claude.ai/code`, commit to `.claude/settings.json`:
 }
 ```
 
-## Delivery path: repo skills, not a marketplace
+## Delivery path: a SessionStart hook installs the marketplace
 
-The marketplace in this repo does not load in cloud sessions. Tested twice on CLI
-2.1.251, once private and once public, with `.claude/settings.json` declaring
-`extraKnownMarketplaces` and `enabledPlugins`. Both runs produced:
+Declaring the marketplace in `.claude/settings.json` does nothing. Tested twice on CLI
+2.1.251, private and public, with `extraKnownMarketplaces` and `enabledPlugins` set:
+both runs printed `No plugins installed.` and `No marketplaces configured`. Repository
+visibility made no difference, so the repo-scoped GitHub proxy was never the cause.
+
+What works is performing the install imperatively at session start. `.claude/hooks/session-start.sh`
+runs `claude plugin marketplace add` and `claude plugin install`, and in a fresh cloud
+session the skills register and are usable:
 
 ```
-$ claude plugin list             → No plugins installed.
-$ claude plugin marketplace list → No marketplaces configured
+happy-productivity:grilling
+happy-engineering:swift-review
 ```
 
-Repository visibility made no difference, so the repo-scoped GitHub proxy was never
-the cause. Raw output for both runs is in `docs/gate1/`.
+Namespaced as `plugin:skill`, so no collisions. `grill-me` is correctly absent from that
+listing because it sets `disable-model-invocation`, which withholds a skill's description
+from context by design.
 
-What does work is a repository's own committed `.claude/skills/` directory:
+Two properties of the hook are load-bearing:
 
-- A plain skill committed there appeared in a fresh cloud session's available skills,
-  description intact.
-- A skill carrying `disable-model-invocation: true` was loaded and the field was
-  honoured — invoking it via the Skill tool was refused with
-  `cannot be used with Skill tool due to disable-model-invocation`, which is a
-  recognised-and-refused response, not a not-found one.
+- **Synchronous, not async.** An async hook returns immediately and installs in the
+  background, racing skill registration. It would fail while looking like a timing-independent
+  failure.
+- **No `set -e`.** If one step fails the rest must still run and log, because capturing
+  which step broke is the point.
 
-So Claude Code-only frontmatter survives repo delivery. The marketplace layout here is
-kept as the source of truth; delivery to consumer repos is by copying `.claude/skills/`,
-not by declaring a marketplace.
+To consume this library from another repo, copy `.claude/hooks/session-start.sh` and the
+`hooks` block in `.claude/settings.json`. That is the entire integration: no copying of
+skills, no sync script, no drift.
+
+Raw output for every run is in `docs/gate1/`.
 
 ## Versioning: deliberately no `version` field
 
