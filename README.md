@@ -2,46 +2,38 @@
 
 A personal Claude Code plugin marketplace. Two plugins, one repo:
 
-| Plugin | Directory | Scope |
+| Plugin | Directory | Skills |
 |---|---|---|
-| `happy-productivity` | `productivity/` | Interview and thinking-discipline skills, portable across surfaces |
-| `happy-engineering` | `engineering/` | Swift and TypeScript engineering disciplines |
+| `happy-productivity` | `productivity/` | `handoff` — portable across surfaces |
+| `happy-engineering` | `engineering/` | `swift-review` — Claude Code only |
 
 ## Consuming it
 
-In a repo you use with `claude.ai/code`, commit to `.claude/settings.json`:
+Copy `.claude/hooks/session-start.sh` and the `hooks` block from
+`.claude/settings.json` into the repo that wants the skills. That is the entire
+integration: no copying of skills, no sync script, no drift.
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "happy-skills": { "source": { "source": "github", "repo": "StevenEvo/happy-skill-library" } }
-  },
-  "enabledPlugins": {
-    "happy-productivity@happy-skills": true,
-    "happy-engineering@happy-skills": true
-  }
-}
-```
+Do **not** declare the marketplace in `.claude/settings.json` via
+`extraKnownMarketplaces` / `enabledPlugins`. It does nothing — see below.
 
 ## Delivery path: a SessionStart hook installs the marketplace
 
-Declaring the marketplace in `.claude/settings.json` does nothing. Tested twice on CLI
-2.1.251, private and public, with `extraKnownMarketplaces` and `enabledPlugins` set:
+Declaring the marketplace in `.claude/settings.json` installs nothing. Tested twice on
+CLI 2.1.251, private and public, with `extraKnownMarketplaces` and `enabledPlugins` set:
 both runs printed `No plugins installed.` and `No marketplaces configured`. Repository
 visibility made no difference, so the repo-scoped GitHub proxy was never the cause.
 
-What works is performing the install imperatively at session start. `.claude/hooks/session-start.sh`
-runs `claude plugin marketplace add` and `claude plugin install`, and in a fresh cloud
-session the skills register and are usable:
+What works is performing the install imperatively at session start.
+`.claude/hooks/session-start.sh` runs `claude plugin marketplace add` and
+`claude plugin install`, and in a fresh cloud session the skills register and are usable,
+namespaced as `plugin:skill` so nothing collides.
 
-```
-happy-productivity:grilling
-happy-engineering:swift-review
-```
-
-Namespaced as `plugin:skill`, so no collisions. `grill-me` is correctly absent from that
-listing because it sets `disable-model-invocation`, which withholds a skill's description
-from context by design.
+The verbatim run output is in `docs/gate1/`. It names the scaffold sample skills that
+were in the repo at the time (`grilling`, `grill-me`), since those were what proved the
+path; they have since been replaced by authored work. The evidence stands as recorded —
+`grill-me` was correctly *absent* from the installed listing because
+`disable-model-invocation` withholds a skill's description from context, and the Skill
+tool refused it **by name**, which proved it had loaded rather than failed.
 
 Two properties of the hook are load-bearing:
 
@@ -50,12 +42,6 @@ Two properties of the hook are load-bearing:
   failure.
 - **No `set -e`.** If one step fails the rest must still run and log, because capturing
   which step broke is the point.
-
-To consume this library from another repo, copy `.claude/hooks/session-start.sh` and the
-`hooks` block in `.claude/settings.json`. That is the entire integration: no copying of
-skills, no sync script, no drift.
-
-Raw output for every run is in `docs/gate1/`.
 
 ## Two tiers: public pulls, private ships with the repo
 
@@ -83,9 +69,8 @@ start, long before any tool call could add a repository. So:
 | Private / employer-specific | Committed `.claude/skills/` in the repo that needs them | Arrives as part of the repo clone, so no credentials are involved |
 
 Committed repo skills are verified to load in a cloud session, and to preserve Claude
-Code-only frontmatter: a skill carrying `disable-model-invocation` was loaded with the
-field honoured, the Skill tool refusing it by name rather than reporting it missing.
-The private tier therefore loses nothing except automatic propagation.
+Code-only frontmatter. The private tier therefore loses nothing except automatic
+propagation.
 
 ## Hook failure is loud, not silent
 
@@ -123,12 +108,30 @@ Claude Code reads fields that the claude.ai upload path rejects. The upload path
 (`package_skill.py`, the Skills API) accepts exactly six: `name`, `description`,
 `license`, `compatibility`, `metadata`, `allowed-tools`. Anything else is a hard error.
 
-- `grilling` uses only spec-legal fields and can be uploaded to claude.ai unchanged.
-- `grill-me` (`disable-model-invocation`) and `swift-review` (`context`, `agent`,
-  `paths`) are plugin-or-repo delivery only.
+- `handoff` uses only spec-legal fields and can be uploaded to claude.ai unchanged.
+- `swift-review` (`context`, `agent`, `paths`) is plugin-or-repo delivery only.
 
 Note that `disable-model-invocation: true` stops Claude from auto-loading a skill but
 does not remove it from the always-on listing budget.
+
+## Upstream
+
+`github.com/mattpocock/skills` is subscribed to unmodified rather than forked. Where a
+skill here covers ground his does, it says so:
+
+- **`handoff`** was written after reading his `productivity/handoff`, and takes three
+  things from it: reference artifacts rather than copying them, a suggested-skills
+  section for the next agent, and redaction before writing. It diverges on three points,
+  each for an environment reason rather than a matter of taste. His writes to the OS
+  temp directory, which a reclaimed cloud container destroys before the file can be
+  retrieved. His is `disable-model-invocation` and takes an `argument-hint`, neither of
+  which is spec-legal, so it cannot reach the claude.ai upload path. And his scopes the
+  skill to work that has to *travel*, on the grounds that `/compact` covers the rest —
+  but cloud sessions have no continuing context to compact, so every phase boundary is a
+  crossing. His own docs name "it captures the what, not the why" as a fair and repeated
+  criticism; the confidence-marking discipline here is aimed squarely at that.
+- His `writing-for-agents` supplied the pruning discipline the skill body was cut
+  against: no-ops, sprawl, and steering by prohibition rather than by the positive.
 
 ## Local iteration, nothing published
 
