@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Handoff — compact a session into a document a fresh agent continues from without re-deriving what this one settled: closed decisions, verified findings, rejected approaches, and what to do next. Use when the user asks for a handoff, notes for the next session, or context to paste into a new conversation. Offer one unprompted when a long session nears compaction or its container is about to be reclaimed.
+description: "Handoff — compact a session into a document a fresh agent continues from without re-deriving what this one settled: closed decisions, verified findings, rejected approaches, and what to do next. Use when the user asks for a handoff, notes for the next session, or context to paste into a new conversation. Offer one unprompted when a long session nears compaction or its container is about to be reclaimed."
 license: MIT
 ---
 

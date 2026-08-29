@@ -40,6 +40,16 @@ run() {
   run "marketplace add" claude plugin marketplace add "$MARKETPLACE" --scope user
   run "install hp" claude plugin install hp@happy-skills --scope user -y
 
+  # The two plugins hp replaced leave install records behind at user scope, and
+  # they linger as "failed to load" forever because the marketplace no longer
+  # declares them. Uninstall is a no-op (exit 0) when a name was never
+  # installed, so this is safe to run every session. Deliberately not via run():
+  # a machine that never had the old names must not be reported as a failure.
+  for stale in happy-productivity happy-engineering; do
+    echo "--- prune $stale ---"
+    claude plugin uninstall "$stale@happy-skills" --scope user 2>&1
+  done
+
   echo "--- plugin list ---"
   claude plugin list 2>&1
 
