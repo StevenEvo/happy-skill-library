@@ -33,8 +33,13 @@ the skills arrive namespaced under `hp:`. No skills are copied, so there is
 nothing to keep in sync.
 
 **Do not** declare the marketplace with `extraKnownMarketplaces` / `enabledPlugins` in
-`.claude/settings.json`. It installs nothing, silently. The install has to be
-imperative, which is what the hook does.
+`.claude/settings.json`. It installs nothing, silently — tested on CLI 2.1.251 at both
+repository visibilities, and both runs printed `No plugins installed.` and `No
+marketplaces configured`. The install has to be imperative, which is what the hook does.
+
+When verifying a change to the hook, run it from a session on **some other repo**. A
+session working on this repo has it attached and so receives credentials for it, which
+makes the marketplace clone succeed for a reason that will not exist anywhere else.
 
 Two properties of the hook matter if you edit it:
 
