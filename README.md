@@ -12,6 +12,13 @@ One plugin, `hp`, so skills are invoked as `hp:<skill>`.
 
 ## Install
 
+**This repo must be public.** Cloud sessions carry GitHub credentials only for
+the repos attached to that session, so a session working on some other repo
+cannot clone a private marketplace — the hook fails with `could not read
+Username for https://github.com` and prints that diagnosis rather than blocking
+startup. Nothing can attach the marketplace in time either: plugin installation
+happens at session start, before any tool call could run.
+
 Run `setup-repo` in the repo that wants the skills and it does the rest — it
 fetches the hook, merges the settings block, updates `.gitignore`, and commits.
 

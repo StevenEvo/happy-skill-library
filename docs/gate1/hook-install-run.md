@@ -67,3 +67,25 @@ C. Does `claude plugin list` show the two plugins installed and enabled? YES —
 D. Not applicable — C is YES and B is NOT NONE. The expected failure mode (plugins installed too late for skill registration) did NOT occur: plugin skills registered and are usable in this session.
 
 Hook mode: synchronous
+
+---
+
+## Correction, added later
+
+This run proves less than it was read as proving. Note the second line of the
+log: `PWD=/home/user/happy-skill-library`. The session was working on the
+marketplace repo itself, so the repo was attached and the clone received
+proxy-injected credentials.
+
+What it establishes: a SessionStart hook can install a marketplace, and the
+skills register in time to be usable.
+
+What it does not establish: that the install works from a session on any *other*
+repo. That is the case the delivery path actually needs, and it was never tested
+here. A later session running the setup against a different repo hit exactly the
+failure Gate 3 predicted — `could not read Username for https://github.com` —
+because the marketplace repo was private at that time.
+
+`gate1-public-run.md` records "Repo visibility at test time: public"; visibility
+was private again afterwards. The marketplace repo has to stay public for the
+hook to reach any repo but this one.
