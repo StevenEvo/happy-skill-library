@@ -1,0 +1,17 @@
+{
+  "name": "happy-skills",
+  "description": "Personal skill library.",
+  "owner": { "name": "Steven" },
+  "plugins": [
+    {
+      "name": "happy-productivity",
+      "source": "./productivity",
+      "description": "Interview and thinking-discipline skills, portable across surfaces."
+    },
+    {
+      "name": "happy-engineering",
+      "source": "./engineering",
+      "description": "Swift and TypeScript engineering disciplines."
+    }
+  ]
+}
