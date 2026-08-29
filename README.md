@@ -57,6 +57,43 @@ skills, no sync script, no drift.
 
 Raw output for every run is in `docs/gate1/`.
 
+## Two tiers: public pulls, private ships with the repo
+
+The hook cannot deliver a private tier, and this is a property of the environment
+rather than a bug to work around.
+
+Cloud sessions hold no GitHub credentials of their own — `GITHUB_TOKEN` is literally
+the string `proxy-injected`. An egress proxy injects credentials per request, scoped to
+the repositories attached to that session. A clone of anything outside that scope gets
+no credentials at all and fails:
+
+```
+× Failed to add marketplace: Failed to clone marketplace repository:
+  HTTPS authentication failed.
+  fatal: could not read Username for 'https://github.com': terminal prompts disabled
+```
+
+A private skills repo is unattached by definition when a session is working on some
+other repo, and nothing can attach it in time — plugin installation happens at session
+start, long before any tool call could add a repository. So:
+
+| Tier | Delivery | Why |
+|---|---|---|
+| Public | This marketplace, installed by the SessionStart hook | Needs no credentials; propagates from HEAD automatically |
+| Private / employer-specific | Committed `.claude/skills/` in the repo that needs them | Arrives as part of the repo clone, so no credentials are involved |
+
+Committed repo skills are verified to load in a cloud session, and to preserve Claude
+Code-only frontmatter: a skill carrying `disable-model-invocation` was loaded with the
+field honoured, the Skill tool refusing it by name rather than reporting it missing.
+The private tier therefore loses nothing except automatic propagation.
+
+## Hook failure is loud, not silent
+
+The hook prints nothing on success and a warning on failure. `SessionStart` stdout
+becomes context the session can see, so a failed install is diagnosable instead of
+presenting as "my skills randomly stopped working". It never exits non-zero: exit code 2
+would block session start outright, which is worse than missing skills.
+
 ## Versioning: deliberately no `version` field
 
 `plugin.json` omits `version` on purpose. That selects commit-SHA versioning, so

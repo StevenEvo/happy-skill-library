@@ -1,41 +1,63 @@
 #!/bin/bash
 # SessionStart hook: install the happy-skills marketplace at session start.
 #
-# Gate 1 established that declaring extraKnownMarketplaces in .claude/settings.json
-# does NOT install anything in a cloud session. This hook tests whether performing
-# the install imperatively during startup gets the skills registered in time.
+# Declaring the marketplace in .claude/settings.json installs nothing (see
+# docs/gate1/). Performing the install imperatively here does work, and the
+# skills register in time to be usable.
 #
-# Deliberately synchronous: async mode would race skill registration and produce a
-# false negative. Deliberately not `set -e`: one failing step must not abort the
-# rest, since capturing what failed is the point.
+# Deliberately synchronous: async mode returns immediately and installs in the
+# background, racing skill registration, so it would fail while looking like a
+# timing-independent failure.
+#
+# Deliberately not `set -e`: one failing step must not abort the rest, because
+# capturing which step broke is the point.
+#
+# Never exits non-zero. Exit code 2 would block session start outright, which is
+# a worse failure than missing skills.
 set -uo pipefail
 
 LOG="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hook-install.log"
+MARKETPLACE="StevenEvo/happy-skill-library"
+FAILED=""
+
+run() {
+  local label="$1"; shift
+  echo "--- $label ---"
+  if "$@" 2>&1; then
+    echo "exit=0"
+  else
+    local code=$?
+    echo "exit=$code"
+    FAILED="${FAILED}${FAILED:+, }${label}"
+  fi
+}
 
 {
   echo "=== SessionStart hook $(date -u +%FT%TZ) ==="
   echo "CLAUDE_CODE_REMOTE=${CLAUDE_CODE_REMOTE:-unset}"
   echo "PWD=$PWD  CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-unset}"
 
-  echo "--- marketplace add ---"
-  claude plugin marketplace add StevenEvo/happy-skill-library --scope user 2>&1
-  echo "exit=$?"
-
-  echo "--- install happy-productivity ---"
-  claude plugin install happy-productivity@happy-skills --scope user -y 2>&1
-  echo "exit=$?"
-
-  echo "--- install happy-engineering ---"
-  claude plugin install happy-engineering@happy-skills --scope user -y 2>&1
-  echo "exit=$?"
+  run "marketplace add" claude plugin marketplace add "$MARKETPLACE" --scope user
+  run "install happy-productivity" claude plugin install happy-productivity@happy-skills --scope user -y
+  run "install happy-engineering" claude plugin install happy-engineering@happy-skills --scope user -y
 
   echo "--- plugin list ---"
   claude plugin list 2>&1
 
-  echo "--- marketplace list ---"
-  claude plugin marketplace list 2>&1
-
-  echo "=== hook done ==="
+  echo "=== hook done (failed steps: ${FAILED:-none}) ==="
 } > "$LOG" 2>&1
+
+# Silent on success, so the hook costs nothing against the skill listing budget.
+# On failure, say so on stdout: SessionStart stdout becomes context the session
+# can see, which turns a silently skill-less session into a diagnosable one.
+if [ -n "$FAILED" ]; then
+  echo "WARNING: the happy-skills marketplace did not install correctly."
+  echo "Failed step(s): ${FAILED}."
+  echo "Skills from happy-productivity and happy-engineering are NOT available in this session."
+  echo "A clone failure here usually means the marketplace repo is unreachable:"
+  echo "cloud sessions receive proxy-injected GitHub credentials scoped to the repos"
+  echo "attached to the session, so a private or unattached marketplace repo fails with"
+  echo "'could not read Username for https://github.com'. Full log: ${LOG}"
+fi
 
 exit 0
