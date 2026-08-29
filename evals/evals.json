@@ -1,0 +1,64 @@
+{
+  "skill_name": "handoff",
+  "evals": [
+    {
+      "id": 0,
+      "name": "closed-options-and-blocked-action",
+      "prompt": "we're basically out of context here. can you write me a handoff for the next session so whoever picks this up doesn't start from scratch? my scratch notes from today are in fixture-a-session-notes.md",
+      "expected_output": "A handoff that states the verified root cause with its evidence, records the three rejected fix options with the reason each lost, marks the 4-core runner detail as an assumption rather than a fact, surfaces the schema_migrations truncate bug that is recorded nowhere else, and puts the Priya/migrations-v2 branch question as a blocked next action with the fork named.",
+      "files": [
+        "fixture-a-session-notes.md"
+      ],
+      "assertions": [
+        "States the root cause: three integration suites share one postgres schema while jest runs them on parallel workers",
+        "Cites the evidence for the diagnosis (40/40 passes at maxWorkers=1 versus 7 failures in 40 at maxWorkers=3)",
+        "Records all three rejected fix options WITH the reason each lost, not just that they were rejected",
+        "Marks the 4-core runner figure as an assumption rather than a verified fact",
+        "Surfaces the schema_migrations TRUNCATE hazard, which is filed nowhere else",
+        "Names schema-per-worker as the preferred fix and states it is blocked on the priya/migrations-v2 vs main question",
+        "Does not imply a branch, commit or PR exists when none does",
+        "Includes a suggested-skills section for the next session"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "supersede-and-correct-prior-handoff",
+      "prompt": "Session's getting long, let's wrap. Write the handoff for session 4 \u2014 there's the session 2 one in prev-handoff.md and my notes from today are in fixture-b-session-notes.md.",
+      "expected_output": "A replacement (not an append) that says what it supersedes, explicitly corrects the refresh-token-rotation error and notes the re-auth flow it invalidates, marks the merged PR #412 and the completed staging cutover as no longer to-do, carries forward the still-valid session 2 decisions and constraints with continuous numbering, and identifies the mobile force-upgrade question as a product decision for Ravi.",
+      "files": [
+        "fixture-b-session-notes.md",
+        "fixture-b-prev-handoff.md"
+      ],
+      "assertions": [
+        "States explicitly that it supersedes the session 2 handoff",
+        "Corrects the session 2 claim that the OIDC provider lacks refresh token rotation",
+        "States that the re-auth-on-expiry flow session 2 designed is now unnecessary",
+        "Records PR #412 as merged rather than carrying it forward as a next action",
+        "Records the staging cutover as done, with its result (40 users, 3 days, zero incidents)",
+        "Carries forward the still-valid session 2 decisions so the reader needs only this document",
+        "Records dual-auth-behind-a-header as rejected, with the 63-controller reason",
+        "Identifies the mobile force-upgrade question as a product decision owned by Ravi",
+        "Includes a suggested-skills section for the next session"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "sole-record-of-conversation-reasoning",
+      "prompt": "can you write this up as a handoff before we lose it? notes are in fixture-c-session-notes.md",
+      "expected_output": "A handoff that reproduces the four-option API shape comparison and each rejection reason, because nothing was written to a file and this is the only record; flags the 90-day retention as the user's guess rather than a requirement; records the deferred webhook and cross-account items with why they were deferred; carries the unresolved partial-results question as genuinely open; and does NOT spend space narrating the code reading, which is all rediscoverable from the repo.",
+      "files": [
+        "fixture-c-session-notes.md"
+      ],
+      "assertions": [
+        "Reproduces all four API shapes considered, each with why it was rejected or chosen",
+        "Says this reasoning is the sole record because nothing was written to a file",
+        "Flags the 90-day retention as the user's guess rather than a settled requirement",
+        "Records the webhook option as deferred-not-rejected, with the procurement reason",
+        "Records the cross-account deferral and why it was deferred",
+        "Carries the partial-results-while-running question as genuinely unresolved",
+        "Does not spend space narrating the code reading (v2 routes, pagination envelope, error shapes)",
+        "Includes a suggested-skills section for the next session"
+      ]
+    }
+  ]
+}

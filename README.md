@@ -1,140 +1,97 @@
 # happy-skill-library
 
-A personal Claude Code plugin marketplace. Two plugins, one repo:
+A personal Claude Code plugin marketplace.
 
-| Plugin | Directory | Scope |
+One plugin, `hp`, so skills are invoked as `hp:<skill>`.
+
+| Skill | What it does | Surfaces |
 |---|---|---|
-| `happy-productivity` | `productivity/` | Interview and thinking-discipline skills, portable across surfaces |
-| `happy-engineering` | `engineering/` | Swift and TypeScript engineering disciplines |
+| `hp:handoff` | Compact a session into a document a fresh agent continues from | Anywhere, including claude.ai upload |
+| `hp:swift-review` | Review Swift changes against project conventions | Claude Code only |
 
-## Consuming it
+## Install
 
-In a repo you use with `claude.ai/code`, commit to `.claude/settings.json`:
+Copy two things into the repo that wants the skills:
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "happy-skills": { "source": { "source": "github", "repo": "StevenEvo/happy-skill-library" } }
-  },
-  "enabledPlugins": {
-    "happy-productivity@happy-skills": true,
-    "happy-engineering@happy-skills": true
-  }
-}
-```
+1. `.claude/hooks/session-start.sh`
+2. the `hooks` block from `.claude/settings.json`
 
-## Delivery path: a SessionStart hook installs the marketplace
+That is the whole integration. The hook installs the marketplace at session start, and
+the skills arrive namespaced under `hp:`. No skills are copied, so there is
+nothing to keep in sync.
 
-Declaring the marketplace in `.claude/settings.json` does nothing. Tested twice on CLI
-2.1.251, private and public, with `extraKnownMarketplaces` and `enabledPlugins` set:
-both runs printed `No plugins installed.` and `No marketplaces configured`. Repository
-visibility made no difference, so the repo-scoped GitHub proxy was never the cause.
+**Do not** declare the marketplace with `extraKnownMarketplaces` / `enabledPlugins` in
+`.claude/settings.json`. It installs nothing, silently. The install has to be
+imperative, which is what the hook does.
 
-What works is performing the install imperatively at session start. `.claude/hooks/session-start.sh`
-runs `claude plugin marketplace add` and `claude plugin install`, and in a fresh cloud
-session the skills register and are usable:
+Two properties of the hook matter if you edit it:
 
-```
-happy-productivity:grilling
-happy-engineering:swift-review
-```
+- **Keep it synchronous.** An async hook returns immediately and installs in the
+  background, racing skill registration.
+- **Keep it free of `set -e`.** A failing step must not abort the rest, or you lose the
+  log that says which step broke.
 
-Namespaced as `plugin:skill`, so no collisions. `grill-me` is correctly absent from that
-listing because it sets `disable-model-invocation`, which withholds a skill's description
-from context by design.
+It never exits non-zero — exit code 2 blocks session start, which is worse than missing
+skills. On failure it prints a warning to stdout, which becomes context the session can
+read, so a bad install is visible rather than presenting as "my skills stopped working".
+Full log: `.claude/hook-install.log`.
 
-Two properties of the hook are load-bearing:
+## Private and employer-specific skills
 
-- **Synchronous, not async.** An async hook returns immediately and installs in the
-  background, racing skill registration. It would fail while looking like a timing-independent
-  failure.
-- **No `set -e`.** If one step fails the rest must still run and log, because capturing
-  which step broke is the point.
+These do not go in this repo. Commit them as `.claude/skills/` in the repo that needs
+them, where they arrive with the clone.
 
-To consume this library from another repo, copy `.claude/hooks/session-start.sh` and the
-`hooks` block in `.claude/settings.json`. That is the entire integration: no copying of
-skills, no sync script, no drift.
+The reason is structural, not a preference: cloud sessions hold no GitHub credentials of
+their own. An egress proxy injects them per request, scoped to the repositories attached
+to the session. A private marketplace repo is unattached by definition when a session is
+working on some other repo, and nothing can attach it in time — plugin installation
+happens at session start, before any tool call could add a repository.
 
-Raw output for every run is in `docs/gate1/`.
-
-## Two tiers: public pulls, private ships with the repo
-
-The hook cannot deliver a private tier, and this is a property of the environment
-rather than a bug to work around.
-
-Cloud sessions hold no GitHub credentials of their own — `GITHUB_TOKEN` is literally
-the string `proxy-injected`. An egress proxy injects credentials per request, scoped to
-the repositories attached to that session. A clone of anything outside that scope gets
-no credentials at all and fails:
-
-```
-× Failed to add marketplace: Failed to clone marketplace repository:
-  HTTPS authentication failed.
-  fatal: could not read Username for 'https://github.com': terminal prompts disabled
-```
-
-A private skills repo is unattached by definition when a session is working on some
-other repo, and nothing can attach it in time — plugin installation happens at session
-start, long before any tool call could add a repository. So:
-
-| Tier | Delivery | Why |
+| Tier | Delivery | Trade |
 |---|---|---|
-| Public | This marketplace, installed by the SessionStart hook | Needs no credentials; propagates from HEAD automatically |
-| Private / employer-specific | Committed `.claude/skills/` in the repo that needs them | Arrives as part of the repo clone, so no credentials are involved |
+| Public | This marketplace, via the hook | Propagates from HEAD automatically |
+| Private | Committed `.claude/skills/` | No credentials needed; no automatic propagation |
 
-Committed repo skills are verified to load in a cloud session, and to preserve Claude
-Code-only frontmatter: a skill carrying `disable-model-invocation` was loaded with the
-field honoured, the Skill tool refusing it by name rather than reporting it missing.
-The private tier therefore loses nothing except automatic propagation.
+Committed repo skills preserve Claude Code-only frontmatter, so the private tier gives up
+nothing but propagation.
 
-## Hook failure is loud, not silent
+## Adding a skill
 
-The hook prints nothing on success and a warning on failure. `SessionStart` stdout
-becomes context the session can see, so a failed install is diagnosable instead of
-presenting as "my skills randomly stopped working". It never exits non-zero: exit code 2
-would block session start outright, which is worse than missing skills.
+Put it in `hp/skills/<name>/SKILL.md`.
 
-## Versioning: deliberately no `version` field
+**Choose frontmatter by where the skill needs to reach.** The claude.ai upload path
+accepts exactly six fields — `name`, `description`, `license`, `compatibility`,
+`metadata`, `allowed-tools` — and anything else is a hard error. A skill using
+`disable-model-invocation`, `context`, `agent` or `paths` is plugin-or-repo delivery
+only. Keep portable skills spec-legal so they stay uploadable.
 
-`plugin.json` omits `version` on purpose. That selects commit-SHA versioning, so
-consumers pick up changes whenever this repo's commit changes — the right trade for a
-personal library that should propagate without a release step.
-
-The cost: `claude plugin validate --strict` treats a missing `version` as an error.
-
-**So CI must run `claude plugin validate` without `--strict`.** You cannot have both
-commit-SHA versioning and a `--strict` gate; this repo picks propagation.
-
-## What validation does and does not cover
-
-`claude plugin validate` checks the **marketplace manifest only**. It does not read
-`SKILL.md` at all. Verified against CLI 2.1.251 — all of these passed `--strict`:
-
-- a skill with an unknown frontmatter key
-- a skill with no frontmatter whatsoever
-- a skill with an invalid name and an empty description
-
-All three still counted as loadable skills in the component inventory. Treat validation
-as a manifest linter, nothing more. Use `claude plugin eval` for actual skill quality.
-
-## Frontmatter portability
-
-Claude Code reads fields that the claude.ai upload path rejects. The upload path
-(`package_skill.py`, the Skills API) accepts exactly six: `name`, `description`,
-`license`, `compatibility`, `metadata`, `allowed-tools`. Anything else is a hard error.
-
-- `grilling` uses only spec-legal fields and can be uploaded to claude.ai unchanged.
-- `grill-me` (`disable-model-invocation`) and `swift-review` (`context`, `agent`,
-  `paths`) are plugin-or-repo delivery only.
-
-Note that `disable-model-invocation: true` stops Claude from auto-loading a skill but
-does not remove it from the always-on listing budget.
-
-## Local iteration, nothing published
+`disable-model-invocation: true` stops Claude auto-loading a skill but does not remove it
+from the always-on listing budget. Check the cost:
 
 ```sh
-claude --plugin-dir ./engineering plugin details happy-engineering
+claude --plugin-dir ./hp plugin details hp
 ```
 
-`plugin details` also reports the always-on token cost each plugin adds to every
-session. Run it whenever you add a skill, and pair it with `/doctor`.
+`--plugin-dir` needs no marketplace, so you can iterate locally before pushing anything.
+Pair it with `/doctor` for the session total.
+
+## Validation and CI
+
+```sh
+claude plugin validate .
+```
+
+**Without `--strict`.** `plugin.json` omits `version` on purpose: that selects commit-SHA
+versioning, so consumers pick up changes on every commit with no release step. `--strict`
+treats a missing `version` as an error. You cannot have both; this repo picks propagation.
+
+`plugin validate` checks the **marketplace manifest only** — it never opens `SKILL.md`. A
+skill with no frontmatter at all, an invalid name, or an empty description passes it and
+still counts in the component inventory. Use `claude plugin eval` for skill quality;
+treat `validate` as a manifest linter.
+
+## Credits
+
+`handoff` was written after reading the `handoff` and `writing-for-agents` skills in
+[mattpocock/skills](https://github.com/mattpocock/skills), which is subscribed to
+unmodified rather than forked.
