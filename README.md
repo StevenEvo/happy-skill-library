@@ -2,10 +2,12 @@
 
 A personal Claude Code plugin marketplace.
 
-| Plugin | Skill | Surfaces |
+One plugin, `hp`, so skills are invoked as `hp:<skill>`.
+
+| Skill | What it does | Surfaces |
 |---|---|---|
-| `happy-productivity` | `handoff` — compact a session into a document a fresh agent continues from | Anywhere, including claude.ai upload |
-| `happy-engineering` | `swift-review` — review Swift changes against project conventions | Claude Code only |
+| `hp:handoff` | Compact a session into a document a fresh agent continues from | Anywhere, including claude.ai upload |
+| `hp:swift-review` | Review Swift changes against project conventions | Claude Code only |
 
 ## Install
 
@@ -15,7 +17,7 @@ Copy two things into the repo that wants the skills:
 2. the `hooks` block from `.claude/settings.json`
 
 That is the whole integration. The hook installs the marketplace at session start, and
-the skills arrive namespaced as `plugin:skill`. No skills are copied, so there is
+the skills arrive namespaced under `hp:`. No skills are copied, so there is
 nothing to keep in sync.
 
 **Do not** declare the marketplace with `extraKnownMarketplaces` / `enabledPlugins` in
@@ -55,19 +57,19 @@ nothing but propagation.
 
 ## Adding a skill
 
-Put it in `productivity/skills/<name>/SKILL.md` or `engineering/skills/<name>/SKILL.md`.
+Put it in `hp/skills/<name>/SKILL.md`.
 
 **Choose frontmatter by where the skill needs to reach.** The claude.ai upload path
 accepts exactly six fields — `name`, `description`, `license`, `compatibility`,
 `metadata`, `allowed-tools` — and anything else is a hard error. A skill using
 `disable-model-invocation`, `context`, `agent` or `paths` is plugin-or-repo delivery
-only. Keep the productivity tier spec-legal so it stays portable.
+only. Keep portable skills spec-legal so they stay uploadable.
 
 `disable-model-invocation: true` stops Claude auto-loading a skill but does not remove it
 from the always-on listing budget. Check the cost:
 
 ```sh
-claude --plugin-dir ./productivity plugin details happy-productivity
+claude --plugin-dir ./hp plugin details hp
 ```
 
 `--plugin-dir` needs no marketplace, so you can iterate locally before pushing anything.

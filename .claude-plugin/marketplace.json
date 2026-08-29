@@ -4,14 +4,9 @@
   "owner": { "name": "Steven" },
   "plugins": [
     {
-      "name": "happy-productivity",
-      "source": "./productivity",
-      "description": "Session continuity and thinking-discipline skills, portable across surfaces."
-    },
-    {
-      "name": "happy-engineering",
-      "source": "./engineering",
-      "description": "Swift and TypeScript engineering disciplines."
+      "name": "hp",
+      "source": "./hp",
+      "description": "Personal skills: session continuity and engineering disciplines."
     }
   ]
 }

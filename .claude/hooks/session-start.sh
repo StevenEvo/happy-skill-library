@@ -38,8 +38,7 @@ run() {
   echo "PWD=$PWD  CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-unset}"
 
   run "marketplace add" claude plugin marketplace add "$MARKETPLACE" --scope user
-  run "install happy-productivity" claude plugin install happy-productivity@happy-skills --scope user -y
-  run "install happy-engineering" claude plugin install happy-engineering@happy-skills --scope user -y
+  run "install hp" claude plugin install hp@happy-skills --scope user -y
 
   echo "--- plugin list ---"
   claude plugin list 2>&1
@@ -53,7 +52,7 @@ run() {
 if [ -n "$FAILED" ]; then
   echo "WARNING: the happy-skills marketplace did not install correctly."
   echo "Failed step(s): ${FAILED}."
-  echo "Skills from happy-productivity and happy-engineering are NOT available in this session."
+  echo "Skills from the hp plugin are NOT available in this session."
   echo "A clone failure here usually means the marketplace repo is unreachable:"
   echo "cloud sessions receive proxy-injected GitHub credentials scoped to the repos"
   echo "attached to the session, so a private or unattached marketplace repo fails with"
