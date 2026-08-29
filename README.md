@@ -8,15 +8,20 @@ One plugin, `hp`, so skills are invoked as `hp:<skill>`.
 |---|---|---|
 | `hp:handoff` | Compact a session into a document a fresh agent continues from | Anywhere, including claude.ai upload |
 | `hp:swift-review` | Review Swift changes against project conventions | Claude Code only |
+| `hp:setup-repo` | Add the SessionStart hook to another repo, so it receives these skills | Anywhere, including claude.ai upload |
 
 ## Install
 
-Copy two things into the repo that wants the skills:
+Run `setup-repo` in the repo that wants the skills and it does the rest — it
+fetches the hook, merges the settings block, updates `.gitignore`, and commits.
 
-1. `.claude/hooks/session-start.sh`
-2. the `hooks` block from `.claude/settings.json`
+Upload `setup-repo` to your claude.ai account once (Settings -> Capabilities ->
+Skills) so it is available in a repo that does not have the hook yet. Every other
+skill arrives through the hook; this one is the bootstrap, and the only skill
+that needs uploading.
 
-That is the whole integration. The hook installs the marketplace at session start, and
+Setting a repo up by hand is two files: `.claude/hooks/session-start.sh`, and the
+`hooks` block from `.claude/settings.json`. The hook installs the marketplace at session start, and
 the skills arrive namespaced under `hp:`. No skills are copied, so there is
 nothing to keep in sync.
 
