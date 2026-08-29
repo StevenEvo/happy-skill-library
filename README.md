@@ -23,6 +23,33 @@ In a repo you use with `claude.ai/code`, commit to `.claude/settings.json`:
 }
 ```
 
+## Delivery path: repo skills, not a marketplace
+
+The marketplace in this repo does not load in cloud sessions. Tested twice on CLI
+2.1.251, once private and once public, with `.claude/settings.json` declaring
+`extraKnownMarketplaces` and `enabledPlugins`. Both runs produced:
+
+```
+$ claude plugin list             → No plugins installed.
+$ claude plugin marketplace list → No marketplaces configured
+```
+
+Repository visibility made no difference, so the repo-scoped GitHub proxy was never
+the cause. Raw output for both runs is in `docs/gate1/`.
+
+What does work is a repository's own committed `.claude/skills/` directory:
+
+- A plain skill committed there appeared in a fresh cloud session's available skills,
+  description intact.
+- A skill carrying `disable-model-invocation: true` was loaded and the field was
+  honoured — invoking it via the Skill tool was refused with
+  `cannot be used with Skill tool due to disable-model-invocation`, which is a
+  recognised-and-refused response, not a not-found one.
+
+So Claude Code-only frontmatter survives repo delivery. The marketplace layout here is
+kept as the source of truth; delivery to consumer repos is by copying `.claude/skills/`,
+not by declaring a marketplace.
+
 ## Versioning: deliberately no `version` field
 
 `plugin.json` omits `version` on purpose. That selects commit-SHA versioning, so
