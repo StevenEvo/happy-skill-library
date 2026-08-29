@@ -1,0 +1,11 @@
+{
+  "extraKnownMarketplaces": {
+    "happy-skills": {
+      "source": { "source": "github", "repo": "StevenEvo/happy-skill-library" }
+    }
+  },
+  "enabledPlugins": {
+    "happy-productivity@happy-skills": true,
+    "happy-engineering@happy-skills": true
+  }
+}
