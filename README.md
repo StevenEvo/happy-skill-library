@@ -53,16 +53,30 @@ Code launches, so it is already too late there. The first session after the edit
 is slower while the snapshot rebuilds; later ones start from it and skip the
 script entirely.
 
-Verify from a fresh session in any repo:
+### Terminal sessions
+
+The same two commands, run once by hand. `~/.claude` persists locally, so there
+is nothing to repeat.
+
+### Verifying
+
+Verify from a **new** session — never the one you made the edit from.
+
+In a cloud session you have no shell of your own, and `/plugin` is one of the
+commands that only run in the terminal interface. Two checks that do work:
+
+- Ask for `hp:handoff`. If the skill loads, the install worked. This is the
+  fastest check and needs nothing but a message.
+- Ask Claude to run `claude plugin list` for you. The CLI works fine in a cloud
+  session; it is the shell access that you personally do not have.
+
+In a terminal session, run it yourself:
 
 ```sh
 claude plugin list     # expect: hp@happy-skills ... enabled
 ```
 
-### Terminal sessions
-
-The same two commands, run once by hand. `~/.claude` persists locally, so there
-is nothing to repeat.
+Either way, expect `hp@happy-skills` with `Scope: user` and `Status: enabled`.
 
 ### What the snapshot costs
 
