@@ -5,7 +5,7 @@ assertions each resulting handoff is graded against in `evals.json`.
 
 **These are `skill-creator` cases, not `claude plugin eval` cases.** `plugin eval`
 reads `case.yaml`, or `prompt.md` plus `graders/*.md`, and defaults to this exact
-directory — so pointing it here finds nothing and reports an empty suite, which
+directory, so pointing it here finds nothing and reports an empty suite. That
 reads as a broken command rather than a format mismatch. Converting them is
 outstanding work, not an oversight.
 

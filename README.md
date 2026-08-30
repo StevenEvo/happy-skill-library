@@ -4,10 +4,11 @@ A personal Claude Code plugin marketplace.
 
 One plugin, `hp`, so skills are invoked as `hp:<skill>`.
 
-| Skill | What it does | Surfaces |
+| Skill | What it does | Where it runs |
 |---|---|---|
 | `hp:handoff` | Compact a session into a document a fresh agent continues from | Anywhere, including claude.ai upload |
 | `hp:continue` | Find that handoff again and resume from it | Anywhere, including claude.ai upload |
+| `hp:unslop` | Cut AI tells from writing. Vendored from pstack | Anywhere, including claude.ai upload |
 
 ## Install
 
@@ -27,7 +28,7 @@ There is no CLI or API for this. It is a web UI edit, once per environment.
 
 1. Open [claude.ai/code](https://claude.ai/code).
 2. Click the cloud icon showing the current environment's name, in the row
-   **above the message box**. That is the only way in — there is no settings
+   **above the message box**. That is the only way in. There is no settings
    page or direct URL for the environment selector.
 3. Under **Cloud**, hover the environment and click the gear icon on its right.
 4. Paste into the **Setup script** field:
@@ -49,7 +50,7 @@ clone needs no further network configuration. Under **None**, it fails.
 
 Saving invalidates the environment cache, and that is what makes the change take
 effect: the next new session rebuilds the snapshot and runs the script. The
-session you make the edit from does not get it — the script runs before Claude
+session you make the edit from does not get it. The script runs before Claude
 Code launches, so it is already too late there. The first session after the edit
 is slower while the snapshot rebuilds; later ones start from it and skip the
 script entirely.
@@ -61,7 +62,7 @@ is nothing to repeat.
 
 ### Verifying
 
-Verify from a **new** session — never the one you made the edit from.
+Verify from a **new** session, never the one you made the edit from.
 
 In a cloud session you have no shell of your own, and `/plugin` is one of the
 commands that only run in the terminal interface. Two checks that do work:
@@ -83,8 +84,8 @@ Either way, expect `hp@happy-skills` with `Scope: user` and `Status: enabled`.
 
 The environment snapshot pins the plugin at the commit it installed. Third-party
 marketplaces have auto-update off by default, so a change pushed here does not
-reach an existing snapshot until the cache rebuilds — on a setup-script edit, or
-after roughly seven days. Editing the script is how you force it.
+reach an existing snapshot until the cache rebuilds, either on a setup-script edit
+or after roughly seven days. Editing the script is how you force it.
 
 That is the trade against the previous `SessionStart`-hook approach, which
 reinstalled from `HEAD` on every session at the cost of five files, a `chmod`,
@@ -100,7 +101,7 @@ read Username for https://github.com`.
 
 **Do not** declare the marketplace with `extraKnownMarketplaces` /
 `enabledPlugins` in `.claude/settings.json`. It registers the marketplace and
-installs nothing. That is documented behaviour rather than a bug — from the
+installs nothing. That is documented behaviour rather than a bug. From the
 [settings reference](https://code.claude.com/docs/en/settings-reference#enabledplugins):
 "Enabling a plugin from an external source such as a GitHub repository or npm
 package in a project's `.claude/settings.json` doesn't install it for other
@@ -120,8 +121,8 @@ available to you.
 These do not go in this repo. Commit them as `.claude/skills/` in the repo that
 needs them, where they arrive with the clone.
 
-The reason is structural, not a preference — it is the same credential scoping
-as above: a private marketplace repo is unattached when a session is working on
+The reason is structural, not a preference. It is the same credential scoping as
+above: a private marketplace repo is unattached when a session is working on
 some other repo, and nothing can attach it in time, because plugin installation
 happens before any tool call could add a repository.
 
@@ -138,9 +139,8 @@ gives up nothing but propagation.
 Put it in `hp/skills/<name>/SKILL.md`.
 
 **Choose frontmatter by where the skill needs to reach.** The claude.ai upload
-path accepts exactly six fields — `name`, `description`, `license`,
-`compatibility`, `metadata`, `allowed-tools` — and anything else is a hard
-error. A skill using `disable-model-invocation`, `context`, `agent` or `paths`
+path accepts exactly six fields: `name`, `description`, `license`,
+`compatibility`, `metadata`, `allowed-tools`. Anything else is a hard error. A skill using `disable-model-invocation`, `context`, `agent` or `paths`
 is plugin-or-repo delivery only. Keep portable skills spec-legal so they stay
 uploadable.
 
@@ -154,6 +154,30 @@ claude --plugin-dir ./hp plugin details hp
 `--plugin-dir` needs no marketplace, so you can iterate locally before pushing
 anything. Pair it with `/doctor` for the session total.
 
+## House style
+
+`unslop` is installed at user scope and applies to everything written in a session,
+including the prose in this repository. The skill is vendored verbatim, so its rules
+are not negotiable here: no em dashes, sentence-case headings, straight quotes, plain
+words over fancy synonyms, and no bold-label-plus-colon lines that restate themselves.
+`README.md`, `handoff` and `continue` were rewritten to match when the skill landed.
+
+Two rules bite most often when editing this repo. Rule 13 bans em dashes and also
+bans reaching for parentheses instead, so a separated thought becomes its own sentence
+or takes a comma. Rule 26 flags abstract metaphor nouns, which is why the skill table
+above says "where it runs" rather than "surfaces".
+
+Check a change before committing:
+
+```sh
+grep -rn '—' --include='*.md' . | grep -vE 'hp/skills/unslop|evals/fixtures'
+```
+
+Expect no output. The two exclusions are deliberate. `hp/skills/unslop` is vendored
+and must stay byte-identical to upstream. `evals/fixtures` holds raw session
+transcripts that stand in for a real user's messy notes, so cleaning them up would
+change what the eval measures.
+
 ## Validation and CI
 
 ```sh
@@ -165,7 +189,7 @@ commit-SHA versioning, so consumers pick up changes on every commit with no
 release step. `--strict` treats a missing `version` as an error. You cannot have
 both; this repo picks propagation.
 
-`plugin validate` checks the **marketplace manifest only** — it never opens
+`plugin validate` checks the **marketplace manifest only**. It never opens
 `SKILL.md`. A skill with no frontmatter at all, an invalid name, or an empty
 description passes it and still counts in the component inventory. Use `claude
 plugin eval` for skill quality; treat `validate` as a manifest linter.
@@ -177,3 +201,10 @@ in [mattpocock/skills](https://github.com/mattpocock/skills), which is subscribe
 to unmodified rather than forked. The install model here follows the same repo's
 lead: distribute a marketplace, install once at user scope, and keep per-repo
 work to configuration rather than plumbing.
+
+`unslop` is vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack),
+MIT licensed, copyright 2026 Lauren Tan. It is copied rather than subscribed because
+`cursor/plugins` ships a Cursor manifest in `.cursor-plugin/` rather than the
+`.claude-plugin/` layout Claude Code reads, so there is no marketplace to add. The
+copy is byte-identical to upstream and pinned in `hp/skills/unslop/UPSTREAM.md`, which
+also carries the re-sync command.
