@@ -18,18 +18,40 @@ no settings block.
 
 Every cloud session starts from a fresh container, so a user-scope install does
 not survive on its own. The thing that does survive is the **cloud environment's
-setup script** — claude.ai/code, environment settings, *Setup script*. It runs
-as root before Claude Code launches, applies to every repository you open in
-that environment, and its result is captured in the environment's filesystem
-snapshot, so it does not re-run on every session.
+setup script**: it runs as root before Claude Code launches, applies to every
+repository you open in that environment, and its result is captured in the
+environment's filesystem snapshot, so it does not re-run on every session.
 
-```bash
-claude plugin marketplace add StevenEvo/happy-skill-library || true
-claude plugin install hp@happy-skills --scope user -y || true
-```
+There is no CLI or API for this. It is a web UI edit, once per environment.
+
+1. Open [claude.ai/code](https://claude.ai/code).
+2. Click the cloud icon showing the current environment's name, in the row
+   **above the message box**. That is the only way in — there is no settings
+   page or direct URL for the environment selector.
+3. Under **Cloud**, hover the environment and click the gear icon on its right.
+4. Paste into the **Setup script** field:
+
+   ```bash
+   #!/bin/bash
+   claude plugin marketplace add StevenEvo/happy-skill-library || true
+   claude plugin install hp@happy-skills --scope user -y || true
+   ```
+
+5. Save.
 
 `|| true` on both lines is load-bearing: a setup script that exits non-zero
 fails session start, which is a worse outcome than missing skills.
+
+The environment needs **Trusted** network access, which is the default.
+`github.com` and `codeload.github.com` are on its allowlist, so the marketplace
+clone needs no further network configuration. Under **None**, it fails.
+
+Saving invalidates the environment cache, and that is what makes the change take
+effect: the next new session rebuilds the snapshot and runs the script. The
+session you make the edit from does not get it — the script runs before Claude
+Code launches, so it is already too late there. The first session after the edit
+is slower while the snapshot rebuilds; later ones start from it and skip the
+script entirely.
 
 Verify from a fresh session in any repo:
 
