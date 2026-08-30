@@ -8,89 +8,115 @@ One plugin, `hp`, so skills are invoked as `hp:<skill>`.
 |---|---|---|
 | `hp:handoff` | Compact a session into a document a fresh agent continues from | Anywhere, including claude.ai upload |
 | `hp:swift-review` | Review Swift changes against project conventions | Claude Code only |
-| `hp:setup-repo` | Add the SessionStart hook to another repo, so it receives these skills | Anywhere, including claude.ai upload |
 
 ## Install
 
-**This repo must be public.** Cloud sessions carry GitHub credentials only for
-the repos attached to that session, so a session working on some other repo
-cannot clone a private marketplace — the hook fails with `could not read
-Username for https://github.com` and prints that diagnosis rather than blocking
-startup. Nothing can attach the marketplace in time either: plugin installation
-happens at session start, before any tool call could run.
+Installation is **not per-repo**. It happens once, in the thing that owns the
+container a session runs in. Consuming repositories get no files, no hook, and
+no settings block.
 
-Run `setup-repo` in the repo that wants the skills and it does the rest — it
-fetches the hook, merges the settings block, updates `.gitignore`, and commits.
+### Cloud sessions (Claude Code on the web)
 
-Upload `setup-repo` to your claude.ai account once (Settings -> Capabilities ->
-Skills) so it is available in a repo that does not have the hook yet. Every other
-skill arrives through the hook; this one is the bootstrap, and the only skill
-that needs uploading.
+Every cloud session starts from a fresh container, so a user-scope install does
+not survive on its own. The thing that does survive is the **cloud environment's
+setup script** — claude.ai/code, environment settings, *Setup script*. It runs
+as root before Claude Code launches, applies to every repository you open in
+that environment, and its result is captured in the environment's filesystem
+snapshot, so it does not re-run on every session.
 
-Setting a repo up by hand is two files: `.claude/hooks/session-start.sh`, and the
-`hooks` block from `.claude/settings.json`. The hook installs the marketplace at session start, and
-the skills arrive namespaced under `hp:`. No skills are copied, so there is
-nothing to keep in sync.
+```bash
+claude plugin marketplace add StevenEvo/happy-skill-library || true
+claude plugin install hp@happy-skills --scope user -y || true
+```
 
-**Do not** declare the marketplace with `extraKnownMarketplaces` / `enabledPlugins` in
-`.claude/settings.json`. It installs nothing, silently — tested on CLI 2.1.251 at both
-repository visibilities, and both runs printed `No plugins installed.` and `No
-marketplaces configured`. The install has to be imperative, which is what the hook does.
+`|| true` on both lines is load-bearing: a setup script that exits non-zero
+fails session start, which is a worse outcome than missing skills.
 
-When verifying a change to the hook, run it from a session on **some other repo**. A
-session working on this repo has it attached and so receives credentials for it, which
-makes the marketplace clone succeed for a reason that will not exist anywhere else.
+Verify from a fresh session in any repo:
 
-Two properties of the hook matter if you edit it:
+```sh
+claude plugin list     # expect: hp@happy-skills ... enabled
+```
 
-- **Keep it synchronous.** An async hook returns immediately and installs in the
-  background, racing skill registration.
-- **Keep it free of `set -e`.** A failing step must not abort the rest, or you lose the
-  log that says which step broke.
+### Terminal sessions
 
-It never exits non-zero — exit code 2 blocks session start, which is worse than missing
-skills. On failure it prints a warning to stdout, which becomes context the session can
-read, so a bad install is visible rather than presenting as "my skills stopped working".
-Full log: `.claude/hook-install.log`.
+The same two commands, run once by hand. `~/.claude` persists locally, so there
+is nothing to repeat.
+
+### What the snapshot costs
+
+The environment snapshot pins the plugin at the commit it installed. Third-party
+marketplaces have auto-update off by default, so a change pushed here does not
+reach an existing snapshot until the cache rebuilds — on a setup-script edit, or
+after roughly seven days. Editing the script is how you force it.
+
+That is the trade against the previous `SessionStart`-hook approach, which
+reinstalled from `HEAD` on every session at the cost of five files, a `chmod`,
+and a settings merge in every consuming repo.
+
+## Requirements and dead ends
+
+**This repo must be public.** Cloud containers hold no GitHub credentials of
+their own; an egress proxy injects them per request, scoped to the repositories
+attached to the session. A private marketplace is unattached by definition when
+the session is working on some other repo, and the clone fails with `could not
+read Username for https://github.com`.
+
+**Do not** declare the marketplace with `extraKnownMarketplaces` /
+`enabledPlugins` in `.claude/settings.json`. It registers the marketplace and
+installs nothing. That is documented behaviour rather than a bug — from the
+[settings reference](https://code.claude.com/docs/en/settings-reference#enabledplugins):
+"Enabling a plugin from an external source such as a GitHub repository or npm
+package in a project's `.claude/settings.json` doesn't install it for other
+people. On every path that loads plugins, Claude Code reports the plugin as not
+installed until each user installs it themselves." Confirmed here independently
+on CLI 2.1.251 at both repository visibilities; both runs printed `No plugins
+installed.` The install has to be imperative.
+
+**Fallback where you do not control the environment**, or for non-Claude agents:
+`npx skills@latest add StevenEvo/happy-skill-library` vendors the `SKILL.md`
+files into a repo as ordinary files ([vercel-labs/skills](https://github.com/vercel-labs/skills)).
+Vendored copies drift; reach for this only when the setup script is not
+available to you.
 
 ## Private and employer-specific skills
 
-These do not go in this repo. Commit them as `.claude/skills/` in the repo that needs
-them, where they arrive with the clone.
+These do not go in this repo. Commit them as `.claude/skills/` in the repo that
+needs them, where they arrive with the clone.
 
-The reason is structural, not a preference: cloud sessions hold no GitHub credentials of
-their own. An egress proxy injects them per request, scoped to the repositories attached
-to the session. A private marketplace repo is unattached by definition when a session is
-working on some other repo, and nothing can attach it in time — plugin installation
-happens at session start, before any tool call could add a repository.
+The reason is structural, not a preference — it is the same credential scoping
+as above: a private marketplace repo is unattached when a session is working on
+some other repo, and nothing can attach it in time, because plugin installation
+happens before any tool call could add a repository.
 
 | Tier | Delivery | Trade |
 |---|---|---|
-| Public | This marketplace, via the hook | Propagates from HEAD automatically |
+| Public | This marketplace, via the environment setup script | Propagates from `HEAD` on cache rebuild |
 | Private | Committed `.claude/skills/` | No credentials needed; no automatic propagation |
 
-Committed repo skills preserve Claude Code-only frontmatter, so the private tier gives up
-nothing but propagation.
+Committed repo skills preserve Claude Code-only frontmatter, so the private tier
+gives up nothing but propagation.
 
 ## Adding a skill
 
 Put it in `hp/skills/<name>/SKILL.md`.
 
-**Choose frontmatter by where the skill needs to reach.** The claude.ai upload path
-accepts exactly six fields — `name`, `description`, `license`, `compatibility`,
-`metadata`, `allowed-tools` — and anything else is a hard error. A skill using
-`disable-model-invocation`, `context`, `agent` or `paths` is plugin-or-repo delivery
-only. Keep portable skills spec-legal so they stay uploadable.
+**Choose frontmatter by where the skill needs to reach.** The claude.ai upload
+path accepts exactly six fields — `name`, `description`, `license`,
+`compatibility`, `metadata`, `allowed-tools` — and anything else is a hard
+error. A skill using `disable-model-invocation`, `context`, `agent` or `paths`
+is plugin-or-repo delivery only. Keep portable skills spec-legal so they stay
+uploadable.
 
-`disable-model-invocation: true` stops Claude auto-loading a skill but does not remove it
-from the always-on listing budget. Check the cost:
+`disable-model-invocation: true` stops Claude auto-loading a skill but does not
+remove it from the always-on listing budget. Check the cost:
 
 ```sh
 claude --plugin-dir ./hp plugin details hp
 ```
 
-`--plugin-dir` needs no marketplace, so you can iterate locally before pushing anything.
-Pair it with `/doctor` for the session total.
+`--plugin-dir` needs no marketplace, so you can iterate locally before pushing
+anything. Pair it with `/doctor` for the session total.
 
 ## Validation and CI
 
@@ -98,17 +124,20 @@ Pair it with `/doctor` for the session total.
 claude plugin validate .
 ```
 
-**Without `--strict`.** `plugin.json` omits `version` on purpose: that selects commit-SHA
-versioning, so consumers pick up changes on every commit with no release step. `--strict`
-treats a missing `version` as an error. You cannot have both; this repo picks propagation.
+**Without `--strict`.** `plugin.json` omits `version` on purpose: that selects
+commit-SHA versioning, so consumers pick up changes on every commit with no
+release step. `--strict` treats a missing `version` as an error. You cannot have
+both; this repo picks propagation.
 
-`plugin validate` checks the **marketplace manifest only** — it never opens `SKILL.md`. A
-skill with no frontmatter at all, an invalid name, or an empty description passes it and
-still counts in the component inventory. Use `claude plugin eval` for skill quality;
-treat `validate` as a manifest linter.
+`plugin validate` checks the **marketplace manifest only** — it never opens
+`SKILL.md`. A skill with no frontmatter at all, an invalid name, or an empty
+description passes it and still counts in the component inventory. Use `claude
+plugin eval` for skill quality; treat `validate` as a manifest linter.
 
 ## Credits
 
-`handoff` was written after reading the `handoff` and `writing-for-agents` skills in
-[mattpocock/skills](https://github.com/mattpocock/skills), which is subscribed to
-unmodified rather than forked.
+`handoff` was written after reading the `handoff` and `writing-for-agents` skills
+in [mattpocock/skills](https://github.com/mattpocock/skills), which is subscribed
+to unmodified rather than forked. The install model here follows the same repo's
+lead: distribute a marketplace, install once at user scope, and keep per-repo
+work to configuration rather than plumbing.
