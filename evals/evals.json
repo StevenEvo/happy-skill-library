@@ -4,10 +4,10 @@
     {
       "id": 0,
       "name": "closed-options-and-blocked-action",
-      "prompt": "we're basically out of context here. can you write me a handoff for the next session so whoever picks this up doesn't start from scratch? my scratch notes from today are in fixture-a-session-notes.md",
+      "prompt": "we're basically out of context here. can you write me a handoff for the next session so whoever picks this up doesn't start from scratch? my scratch notes from today are in transcript-a.md",
       "expected_output": "A handoff that states the verified root cause with its evidence, records the three rejected fix options with the reason each lost, marks the 4-core runner detail as an assumption rather than a fact, surfaces the schema_migrations truncate bug that is recorded nowhere else, and puts the Priya/migrations-v2 branch question as a blocked next action with the fork named.",
       "files": [
-        "fixture-a-session-notes.md"
+        "transcript-a.md"
       ],
       "assertions": [
         "States the root cause: three integration suites share one postgres schema while jest runs them on parallel workers",
@@ -23,11 +23,11 @@
     {
       "id": 1,
       "name": "supersede-and-correct-prior-handoff",
-      "prompt": "Session's getting long, let's wrap. Write the handoff for session 4 \u2014 there's the session 2 one in prev-handoff.md and my notes from today are in fixture-b-session-notes.md.",
+      "prompt": "Session's getting long, let's wrap. Write the handoff for session 4 \u2014 there's the session 2 one in prev-handoff.md and my notes from today are in transcript-b.md.",
       "expected_output": "A replacement (not an append) that says what it supersedes, explicitly corrects the refresh-token-rotation error and notes the re-auth flow it invalidates, marks the merged PR #412 and the completed staging cutover as no longer to-do, carries forward the still-valid session 2 decisions and constraints with continuous numbering, and identifies the mobile force-upgrade question as a product decision for Ravi.",
       "files": [
-        "fixture-b-session-notes.md",
-        "fixture-b-prev-handoff.md"
+        "transcript-b.md",
+        "prev-handoff.md"
       ],
       "assertions": [
         "States explicitly that it supersedes the session 2 handoff",
@@ -44,10 +44,10 @@
     {
       "id": 2,
       "name": "sole-record-of-conversation-reasoning",
-      "prompt": "can you write this up as a handoff before we lose it? notes are in fixture-c-session-notes.md",
+      "prompt": "can you write this up as a handoff before we lose it? notes are in transcript-c.md",
       "expected_output": "A handoff that reproduces the four-option API shape comparison and each rejection reason, because nothing was written to a file and this is the only record; flags the 90-day retention as the user's guess rather than a requirement; records the deferred webhook and cross-account items with why they were deferred; carries the unresolved partial-results question as genuinely open; and does NOT spend space narrating the code reading, which is all rediscoverable from the repo.",
       "files": [
-        "fixture-c-session-notes.md"
+        "transcript-c.md"
       ],
       "assertions": [
         "Reproduces all four API shapes considered, each with why it was rejected or chosen",

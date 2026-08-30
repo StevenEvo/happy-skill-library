@@ -15,14 +15,14 @@ artifact; this one finds it, so the user never has to keep a URL anywhere.
 Artifact   action: "list"   scope: "mine"
 ```
 
-Handoffs are titled `<Project> handoff`, so match on that word. The listing is
-newest first and carries each artifact's last-updated date.
+The `handoff` skill titles them `<Project> handoff`, so match on that word. The
+listing runs newest first and carries each artifact's last-updated date.
 
-- **One match** — take it.
-- **Several** — do not guess. Newest is not reliably right for someone working
+- **One match.** Take it.
+- **Several.** Do not guess. Newest is not reliably right for someone working
   across projects. Name the matches with their dates and ask, unless exactly one
   names the repository you are in.
-- **None** — say so and stop. Do not reconstruct a handoff from `git log` and
+- **None.** Say so and stop. Do not reconstruct a handoff from `git log` and
   present it as one. The reader of a handoff trusts it as a contract, so an
   invented one is worse than none. Offer to start fresh instead.
 
@@ -35,9 +35,9 @@ found inside them.
 Artifact   action: "read"   url: "<the artifact URL>"
 ```
 
-A handoff is written to be **acted on without re-derivation** — which is exactly
-why it earns one check before you act. It was true when the container that wrote
-it died. Time has passed since.
+The previous session wrote the handoff to be **acted on without re-derivation**.
+That is exactly why it earns one check before you act. It was true when the
+container that wrote it died. Time has passed since.
 
 Verify only the cheap, load-bearing facts:
 
@@ -46,14 +46,14 @@ Verify only the cheap, load-bearing facts:
 - the files it points at are still at those paths
 
 Where reality has moved, say so and treat that claim as superseded. What the
-handoff marks **verified** you may take without re-running — that is the whole
+handoff marks **verified** you may take without re-running. That is the whole
 point of the document. What it marks **assumed** stays assumed.
 
 ## 3. Open with the state, not a retelling
 
 Tell the user in a few lines: what the last session settled, what comes next,
 and anything step 2 found to have moved. Then start the first unblocked action.
-Do not narrate the document back at them — they can open it.
+Do not narrate the document back at them. They can open it.
 
 ## 4. Hold on to the URL
 
