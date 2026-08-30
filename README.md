@@ -7,6 +7,7 @@ One plugin, `hp`, so skills are invoked as `hp:<skill>`.
 | Skill | What it does | Surfaces |
 |---|---|---|
 | `hp:handoff` | Compact a session into a document a fresh agent continues from | Anywhere, including claude.ai upload |
+| `hp:continue` | Find that handoff again and resume from it | Anywhere, including claude.ai upload |
 
 ## Install
 

@@ -95,12 +95,28 @@ and on whom or what.>
 
 ## Delivery
 
-Write it to `handoff.md` in the working directory and add that path to `.gitignore`
-— a handoff is conversation state, not project content.
+Publish it as an artifact. A handoff that dies with its container costs the whole
+session that wrote it, and a cloud container is reclaimed on inactivity — taking the
+working directory and the temp directory alike. Only what is published or pushed
+survives, and a handoff is conversation state rather than project content, so
+publishing is the option that does not put it in a commit.
 
-Then name the path and ask the user to save it somewhere durable before the session
-ends. Cloud containers get reclaimed and temp directories get cleared, so an
-unretrieved handoff costs the whole session that wrote it.
+Load `artifact-design` first, then publish:
+
+- **Title** — `<Project> handoff`, and nothing else. The `continue` skill matches on
+  that word, so the form is load-bearing rather than cosmetic.
+- **Description** — one line on what the next session should do.
+- **Superseding** — when `continue` handed you the URL of the handoff you are
+  replacing, publish to that URL. One line of work then keeps one page and a version
+  history, which is what makes supersession legible instead of leaving a trail of
+  near-duplicate documents. Read it before publishing over it.
+
+Give the user the URL, and tell them they do not need to keep it: `continue` finds
+it by title in a later session.
+
+If publishing is unavailable, fall back to `handoff.md` in the working directory and
+add it to `.gitignore`. Say plainly that this copy dies with the container and has to
+be saved now — a degraded path the user knows about beats a lost document.
 
 When you reached this skill on your own rather than being asked, offer the handoff in
 a sentence and wait for the user, rather than writing a file they did not ask for.
