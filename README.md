@@ -157,10 +157,14 @@ anything. Pair it with `/doctor` for the session total.
 ## House style
 
 `unslop` is installed at user scope and applies to everything written in a session,
-including the prose in this repository. The skill is vendored verbatim, so its rules
-are not negotiable here: no em dashes, sentence-case headings, straight quotes, plain
-words over fancy synonyms, and no bold-label-plus-colon lines that restate themselves.
-`README.md`, `handoff` and `continue` were rewritten to match when the skill landed.
+including the prose in this repository: no em dashes, sentence-case headings, straight
+quotes, plain words over fancy synonyms, and no bold-label-plus-colon lines that
+restate themselves. `README.md`, `handoff` and `continue` were rewritten to match when
+the skill landed.
+
+Upstream's 31 rules are vendored unchanged. Local rule 32 bans "Let me" as a turn
+opener in favour of "I'll", and is appended rather than slotted in so a re-sync stays
+a clean diff. `hp/skills/unslop/UPSTREAM.md` is the record.
 
 Two rules bite most often when editing this repo. Rule 13 bans em dashes and also
 bans reaching for parentheses instead, so a separated thought becomes its own sentence

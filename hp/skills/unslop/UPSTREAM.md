@@ -17,10 +17,16 @@ a Claude manifest.
 
 ## Local modifications
 
-None. Keeping the file identical means a re-sync is a clean `diff`.
+One, appended so the diff against upstream stays a pure addition and a re-sync
+never has to reconcile a renumbering.
 
-Any future change belongs in this section, with its reason, so the next person can
-tell an intentional divergence from drift.
+- **Rule 32, "Let me" narration.** Added under a new "Narration" heading. Claude
+  opens a large share of its turns with "Let me check", "Let me confirm", "Now let
+  me run it". Upstream has no rule covering it. The fix is "I'll", or dropping the
+  announcement when the action already shows what is happening.
+
+Any further change belongs in this list, with its reason, so the next person can
+tell an intentional divergence from drift. Append rather than renumber.
 
 ## Re-syncing
 
