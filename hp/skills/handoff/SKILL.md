@@ -46,10 +46,12 @@ handoff keeps it rather than trimming it as duplication.
 
 ## Supersede rather than append
 
-When a previous handoff exists, write its replacement: name what it supersedes, say
-which parts are now obsolete and why, carry forward what still stands so the reader
-holds one document rather than two, and correct what the old one got wrong. Do that
-explicitly, so the error stops here.
+A previous handoff is a published artifact, not a file in the repository.
+`continue` hands you its URL, and there is nothing on disk to look for. When one
+exists, write its replacement: name what it supersedes, say which parts are now
+obsolete and why, carry forward what still stands so the reader holds one document
+rather than two, and correct what the old one got wrong. Do that explicitly, so the
+error stops here.
 
 ## Structure
 
@@ -114,9 +116,10 @@ Load `artifact-design` first, then publish:
 Give the user the URL, and tell them they do not need to keep it. `continue` finds
 it by title in a later session.
 
-If publishing is unavailable, fall back to `handoff.md` in the working directory and
-add it to `.gitignore`. Say plainly that this copy dies with the container and has to
-be saved now. A degraded path the user knows about beats a lost document.
+Only if a publish attempt actually fails, fall back to `handoff.md` in the working
+directory and add it to `.gitignore`. Do that after the failure, never in preparation
+for one. Say plainly that this copy dies with the container and has to be saved now.
+A degraded path the user knows about beats a lost document.
 
 When you reached this skill on your own rather than being asked, offer the handoff in
 a sentence and wait for the user, rather than writing a file they did not ask for.

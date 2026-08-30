@@ -36,13 +36,19 @@ There is no CLI or API for this. It is a web UI edit, once per environment.
    ```bash
    #!/bin/bash
    claude plugin marketplace add StevenEvo/happy-skill-library || true
+   claude plugin marketplace update happy-skills || true
    claude plugin install hp@happy-skills --scope user -y || true
+   claude plugin update hp@happy-skills -y || true
    ```
 
 5. Save.
 
-`|| true` on both lines is load-bearing: a setup script that exits non-zero
+`|| true` on every line is load-bearing: a setup script that exits non-zero
 fails session start, which is a worse outcome than missing skills.
+
+The two `update` lines cost nothing on a first run and matter on later ones:
+`add` and `install` are no-ops when the marketplace clone is already present, so
+without them a rebuild can reinstall the same commit it already had.
 
 The environment needs **Trusted** network access, which is the default.
 `github.com` and `codeload.github.com` are on its allowlist, so the marketplace
@@ -57,8 +63,8 @@ script entirely.
 
 ### Terminal sessions
 
-The same two commands, run once by hand. `~/.claude` persists locally, so there
-is nothing to repeat.
+The same commands, run once by hand. `~/.claude` persists locally, so there is
+nothing to repeat.
 
 ### Verifying
 
@@ -90,6 +96,36 @@ or after roughly seven days. Editing the script is how you force it.
 That is the trade against the previous `SessionStart`-hook approach, which
 reinstalled from `HEAD` on every session at the cost of five files, a `chmod`,
 and a settings merge in every consuming repo.
+
+### Reloading a new version
+
+What you are running is the commit the plugin was pinned to at install, not what
+is on `main`:
+
+```sh
+claude plugin list     # Version: <12-char commit sha>
+```
+
+Compare that against `main` before concluding a skill misbehaved. The mismatch is
+silent, and it does not look like a stale install. It looks like a bad skill. A
+session pinned at `5925e2a` ran the pre-artifact `handoff`, which wrote
+`handoff.md` and added it to `.gitignore` exactly as that version instructed,
+while `main` was two commits ahead at `8836e9b`.
+
+To take a newer commit:
+
+```sh
+claude plugin marketplace update happy-skills
+claude plugin update hp@happy-skills -y
+```
+
+Then **restart Claude Code**. Skills are read at startup, so the running session
+keeps the copy it loaded. The update prints `Restart to apply changes` and means it.
+
+In a cloud session that pair is not worth running. There is no restart, and the
+container is reclaimed on inactivity along with the `/root/.claude` the update
+wrote to, so it dies before it can apply. Rebuild the snapshot instead: re-save
+the setup script, and the next new session installs from `main`.
 
 ## Requirements and dead ends
 
